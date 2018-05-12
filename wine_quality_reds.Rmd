@@ -1,10 +1,13 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
 # Red Wine Quality Analysis
 
-by Roger Duong
-
-V1
-
-May 2018
+* by Roger Duong
+* V2
+* May 2018
 
 ========================================================
 
@@ -44,7 +47,8 @@ summary(wine)
 
 ```{r echo=FALSE}
 wine$quality <- ordered(wine$quality, levels = c(3, 4, 5, 6, 7, 8))
-wine$other.sulfur.dioxide <- wine$total.sulfur.dioxide - wine$free.sulfur.dioxide
+wine$other.sulfur.dioxide <- wine$total.sulfur.dioxide - 
+  wine$free.sulfur.dioxide
 wine <- wine[c(1, 2, 3, 4, 5, 6, 7, 14, 8, 9, 10, 11, 12, 13)]
 ```
 
@@ -125,7 +129,7 @@ around 0.6.
 
 # Univariate Analysis
 
-### What is the structure of your dataset?
+**What is the structure of your dataset?**
 
 There are 1,600 wines in the dataset, with 11 features: fixed acidity,
 volatile acidity, citric acid, residual sugar, chlorides, free sulfur dioxide,
@@ -135,30 +139,31 @@ The variable X is just an index number and will not be used for this analysis.
 All variables are numerical.
 
 Some observations:
-- Most wines are rated 5 or 6
-- Wines are acid, with pH mean at 3.3
-- Alcohol contents of wines are on average at 10 %
 
-### What is/are the main feature(s) of interest in your dataset?
+* Most wines are rated 5 or 6
+* Wines are acid, with pH mean at 3.3
+* Alcohol contents of wines are on average at 10 %
+
+**What is/are the main feature(s) of interest in your dataset?**
 
 The main features are the acidic properties of the wines (pH, fixed acidity,
 volatile acidity, citric acid) and alcohol properties of the wines. We will
 examine how those features can predict the label of wine quality.
 
-### What other features in the dataset do you think will help support your \
-investigation into your feature(s) of interest?
+**What other features in the dataset do you think will help support your**
+**investigation into your feature(s) of interest?**
 
 Other features like sugar, sulfur will help examine the relationship between
 chemical properties and wine quality.
 
-### Did you create any new variables from existing variables in the dataset?
+**Did you create any new variables from existing variables in the dataset?**
 
 I did create the new variable 'other.sulfur.dioxide' being the difference
 between the total sulfur dioxide and the free sulfur dioxide.
 
-### Of the features you investigated, were there any unusual distributions? \
-Did you perform any operations on the data to tidy, adjust, or change the form \
-of the data? If so, why did you do this?
+**Of the features you investigated, were there any unusual distributions?**
+**Did you perform any operations on the data to tidy, adjust, or change the**
+**form of the data? If so, why did you do this?**
 
 I converted the label 'quality' from a numerical type to an ordered factor.
 
@@ -169,34 +174,35 @@ plotting a pair plot, which will help to visualize correlations between
 variables.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, Pair_Plots}
-ggpairs(subset(wine, select = -X),
-  lower = list(continuous = wrap("points", shape = I('.'))),
-  upper = list(combo = wrap("box", outlier.shape = I('.'))))
+ggcorr(subset(wine, select = -X))
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, Correlation_Matrix}
 ggcorr(subset(wine, select = -X), geom = "blank", label = TRUE, hjust = 0.75) +
-  geom_point(size = 10, aes(color = coefficient > 0, alpha = abs(coefficient) > 0.5)) +
+  geom_point(size = 10, aes(color = coefficient > 0,
+                            alpha = abs(coefficient) > 0.5)) +
   scale_alpha_manual(values = c("TRUE" = 0.25, "FALSE" = 0)) +
   guides(color = FALSE, alpha = FALSE)
 ```
 
 Using the visualization from the pair plot, I propose to investigate further
 the correlation between:
-- quality and volatile acidity
-- quality and citric acid
-- quality and sulphates
-- quality and alcohol
+
+* quality and volatile acidity
+* quality and citric acid
+* quality and sulphates
+* quality and alcohol
 
 Selecting the largest correlation coefficient from the correlation matrix,
 I propose to study in more details the following correlations between:
-- fixed acidity and citric acid
-- volatile acidity and citric acid
-- fixed acidity and pH
-- citric acid and pH
-- free sulfur dioxide and total sulfur dioxide
-- fixed acidity and density
-- density and alcohol
+
+* fixed acidity and citric acid
+* volatile acidity and citric acid
+* fixed acidity and pH
+* citric acid and pH
+* free sulfur dioxide and total sulfur dioxide
+* fixed acidity and density
+* density and alcohol
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, Bivariate_Plots_1}
 ggplot(data = wine, aes(x = quality, y = volatile.acidity)) +
@@ -230,92 +236,202 @@ generally above 11%.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, Bivariate_Plots_5}
 ggplot(data = wine, aes(x = citric.acid, y = fixed.acidity)) +
-  geom_point(alpha = 0.25)
+  xlim(c(0, 0.75)) +
+  geom_jitter(alpha = 0.25) +
+  geom_smooth(method = lm)
 ```
 
-We can observe a good correlation between fixed acidity and citric acid.
+```{r, echo=FALSE, message=FALSE, warning=FALSE, Model_Biv_5}
+mb5 <- lm(fixed.acidity ~ citric.acid, data = wine)
+```
+
+We can observe a moderate correlation between fixed acidity and citric acid, 
+with a R^2 value of `r round(summary(mb5)$r.squared, 3)`.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, Bivariate_Plots_6}
 ggplot(data = wine, aes(x = citric.acid, y = volatile.acidity)) +
-  geom_point(alpha = 0.25)
+  xlim(c(0, 0.75)) +
+  geom_jitter(alpha = 0.25) +
+  geom_smooth(method = lm)
 ```
 
-We can observe a good correlation between volatile acidity and citric acid.
+```{r, echo=FALSE, message=FALSE, warning=FALSE, Model_Biv_6}
+mb6 <- lm(volatile.acidity ~ citric.acid, data = wine)
+```
+
+We can observe a moderate correlation between volatile acidity and citric acid,
+with a R^2 value of `r round(summary(mb6)$r.squared, 3)`
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, Bivariate_Plots_9}
 ggplot(data = wine, aes(x = fixed.acidity, y = pH)) +
-  geom_jitter(alpha = 0.25)
+  scale_x_log10() +
+  geom_jitter(alpha = 0.25) +
+  geom_smooth(method = lm)
 ```
 
-We can observe a very good correlation between fixed acidity and pH. This is
-expected as pH is a measure of the total acidity in a solution.
+```{r, echo=FALSE, message=FALSE, warning=FALSE, Model_Biv_9}
+mb9_1_1 <- lm(pH ~ fixed.acidity, data = wine)
+mb9_1_2 <- lm(pH ~ log(fixed.acidity), data = wine)
+```
+
+We can observe a moderate correlation between the log of fixed acidity and pH,
+with a R^2 value of `r round(summary(mb9_1_2)$r.squared, 3)`.
+
+We can observe a lot of dispersion, around a general trendline. Let's smooth
+the data by calculating the mean pH for values of fixed acidity.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, Smoothing_9_4}
+wine_fixed_pH <- wine %>%
+  group_by(fixed.acidity) %>%
+  summarise(pH.mean = mean(pH),
+            pH.median = median(pH),
+            n = n())
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, Bivariate_Plots_9_4}
+ggplot(data = wine_fixed_pH, aes(x = fixed.acidity, y = pH.mean)) +
+  scale_x_log10() +
+  geom_point() +
+  geom_smooth(method = lm)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, Model_Biv_9_4}
+mb9_4 <- lm(pH.mean ~ log(fixed.acidity), data = wine_fixed_pH)
+```
+
+We can observe a good correlation between log fixed acidity and pH mean, with 
+a R^2 value of `r round(summary(mb9_4)$r.squared, 3)`. 
+
+This is expected as the pH is a function of the log concentration of H+ ions,
+which is proportional to the fixed acidity concentration.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, Bivariate_Plots_9_2}
 ggplot(data = wine, aes(x = citric.acid, y = pH)) +
-  geom_jitter(alpha = 0.25)
+  xlim(c(0, 0.75)) +
+  geom_jitter(alpha = 0.25) +
+  geom_smooth(method = lm)
 ```
 
-We can observe a very good correlation between citric acid and pH. This is
-expected as pH is a measure of the total acidity in a solution.
+```{r, echo=FALSE, message=FALSE, warning=FALSE, Model_Biv_9_2}
+mb9_2_1 <- lm(pH ~ citric.acid, data = wine)
+```
+
+We can observe a weak correlation between citric acid and pH, with 
+a R^2 value of `r round(summary(mb9_2_1)$r.squared, 3)`.
+
+We can observe a lot of dispersion, around a general trendline. Let's smooth
+the data by calculating the mean pH for values of citric acid.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, Smoothing_9_3}
+wine_citric_pH <- wine %>%
+  group_by(citric.acid) %>%
+  summarise(pH.mean = mean(pH),
+            pH.median = median(pH),
+            n = n())
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, Bivariate_Plots_9_3}
+ggplot(data = wine_citric_pH, aes(x = citric.acid, y = pH.mean)) +
+  xlim(c(0, 0.75)) +
+  geom_point() +
+  geom_smooth(method = lm)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, Model_Biv_9_3}
+mb9_3 <- lm(pH.mean ~ citric.acid, data = wine_citric_pH)
+```
+
+We can observe a good correlation between citric acid and pH mean, with 
+a R^2 value of `r round(summary(mb9_3)$r.squared, 3)`.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, Bivariate_Plots_7}
 ggplot(data = wine, aes(x = free.sulfur.dioxide, y = total.sulfur.dioxide)) +
-  geom_jitter(alpha = 0.25, size = 1)
+  geom_jitter(alpha = 0.25, size = 1) +
+  geom_smooth(method = lm, formula = y~0+x)
 ```
 
-We can observe a very good correlation between total sulfur dioxide and free
-sulfur dioxide. This is expected as the total.
+```{r, echo=FALSE, message=FALSE, warning=FALSE, Model_Biv_7}
+mb7 <- lm(total.sulfur.dioxide ~ 0 + free.sulfur.dioxide, data = wine)
+```
+
+We can observe a good correlation between total sulfur dioxide and free
+sulfur dioxide, with a R^2 value of `r round(summary(mb7)$r.squared, 3)`.
+
+This is expected as the two variables are colinear.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, Bivariate_Plots_8}
 ggplot(data = wine, aes(x = density, y = fixed.acidity)) +
-  geom_jitter(alpha = 0.25)
+  geom_jitter(alpha = 0.25) +
+  geom_smooth(method = lm)
 ```
 
-We can observe good correlation between fixed acidity and density.
+```{r, echo=FALSE, message=FALSE, warning=FALSE, Model_Biv_8}
+mb8 <- lm(fixed.acidity ~ density, data = wine)
+```
+
+We can observe moderate correlation between fixed acidity and density, with
+a R^2 value of `r round(summary(mb8)$r.squared, 3)`.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, Bivariate_Plots_10}
 ggplot(data = wine, aes(x = alcohol, y = density)) +
-  geom_jitter(alpha = 0.25)
+  geom_jitter(alpha = 0.25) +
+  geom_smooth(method = lm)
 ```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, Model_Biv_10}
+mb10 <- lm(density ~ alcohol, data = wine)
+```
+
+We can observe weak correlation between density and alcohol, with
+a R^2 value of `r round(summary(mb10)$r.squared, 3)`.
 
 # Bivariate Analysis
 
-### Talk about some of the relationships you observed in this part of the \
-investigation. How did the feature(s) of interest vary with other features in \
-the dataset?
+**Talk about some of the relationships you observed in this part of the**
+**investigation. How did the feature(s) of interest vary with other features**
+**in the dataset?**
 
 Using the visualization from the pair plot, we can observe good correlation
 between:
-- quality and volatile acidity
-- quality and citric acid
-- quality and sulphates
-- quality and alcohol
 
-### Did you observe any interesting relationships between the other features \
-(not the main feature(s) of interest)?
+* quality and volatile acidity
+* quality and citric acid
+* quality and sulphates
+* quality and alcohol
 
-The scatter plots allwed us to observe good correlation between the following
-features:
-- fixed acidity and citric acid
-- volatile acidity and citric acid
-- fixed acidity and pH
-- citric acid and pH
-- free sulfur dioxide and total sulfur dioxide
-- fixed acidity and density
-- density and alcohol
+**Did you observe any interesting relationships between the other features**
+**(not the main feature(s) of interest)?**
 
-Some correlations are expected as some of the chemical properties are chemically
-dependent between each other:
-- fixed acidity and pH
-- citric acid and pH
-- free sulfur dioxide and total sulfur dioxide
+The scatter plots and simple linear models allowed us to observe good
+correlation between the following features:
+
+* free sulfur dioxide and total sulfur dioxide
+* citric acid and pH mean
+* fixed acidity and pH mean
+
+Those correlations above are expected because the chemical properties are
+chemically dependent between each other.
+
+The scatter plots and simple linear models allowed us to observe moderate
+correlation between the following features:
+
+* fixed acidity and citric acid
+* volatile acidity and citric acid
+* fixed acidity and pH
+* fixed acidity and density
+
+The scatter plots and simple linear models allowed us to observe weak
+correlation between the following features:
+
+* citric acid and pH
+* density and alcohol
 
 As such, if we were to use them in a prediction model, we should be cautious
 about mistakenly showing spurious correlations.
 
-### What was the strongest relationship you found?
+**What was the strongest relationship you found?**
 
-The strongest relationship for the quality of wine aws found with the volatile
+The strongest relationship for the quality of wine was found with the volatile
 acidity.
 
 # Multivariate Plots Section
@@ -325,26 +441,31 @@ strong relationships previously and add a third variable being the main label
 of interest (quality).
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, Multivariate_Plots_1}
-ggplot(data = wine, aes(x = citric.acid, y = volatile.acidity, color = quality)) +
+ggplot(data = wine, aes(x = citric.acid, y = volatile.acidity,
+                        color = quality)) +
   geom_jitter(alpha = 0.75, size = 2) +
+  geom_smooth(method = lm, se = FALSE) +
   scale_color_brewer(palette = 'RdYlGn')
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, Multivariate_Plots_2}
 ggplot(data = wine, aes(x = citric.acid, y = fixed.acidity, color = quality)) +
   geom_jitter(alpha = 0.75, size = 2) +
+  geom_smooth(method = lm, se = FALSE) +
   scale_color_brewer(palette = 'RdYlGn')
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, Multivariate_Plots_3}
 ggplot(data = wine, aes(x = density, y = fixed.acidity, color = quality)) +
   geom_jitter(alpha = 0.75, size = 2) +
+  geom_smooth(method = lm, se = FALSE) +
   scale_color_brewer(palette = 'RdYlGn')
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, Multivariate_Plots_4}
 ggplot(data = wine, aes(x = alcohol, y = density, color = quality)) +
   geom_jitter(alpha = 0.75, size = 2) +
+  geom_smooth(method = lm, se = FALSE) +
   scale_color_brewer(palette = 'RdYlGn')
 ```
 
@@ -360,27 +481,28 @@ in red and orange).
 
 # Multivariate Analysis
 
-### Talk about some of the relationships you observed in this part of the \
-investigation. Were there features that strengthened each other in terms of \
-looking at your feature(s) of interest?
+**Talk about some of the relationships you observed in this part of the**
+**investigation. Were there features that strengthened each other in terms of**
+**looking at your feature(s) of interest?**
 
 The relationship between the label quality and volatile acidity, alcohol were
 strengthened.
 
-### Were there any interesting or surprising interactions between features?
+**Were there any interesting or surprising interactions between features?**
 
 The relationship between density on fixed acidity showed interaction.
 
-### OPTIONAL: Did you create any models with your dataset? Discuss the \
-strengths and limitations of your model.
+**OPTIONAL: Did you create any models with your dataset? Discuss the**
+**strengths and limitations of your model.**
 
 We created an ordinal logistic regression model using the MASS library. The
 purpose of the model is to predict the wine quality using the features available
 in the dataset.
 
 The relationship studied was:
-quality ~ volatile.acidity + alcohol + fixed.acidity +
-          density + citric.acid + sulphates
+
+quality ~ volatile.acidity + alcohol + fixed.acidity + density +
+  citric.acid + sulphates
 
 We splitted the dataset into test and training sets. We then created several
 models by adding features one by one, in order to study the influence of those
@@ -405,7 +527,10 @@ m5 <- update(m4, ~ . + sulphates)
 m6 <- update(m5, ~ . + citric.acid)
 
 # Model with all variables
-m7 <- polr(quality ~ volatile.acidity + alcohol + density + fixed.acidity + sulphates + citric.acid + residual.sugar + chlorides + free.sulfur.dioxide + other.sulfur.dioxide + pH, data = wine_train)
+m7 <- polr(quality ~ volatile.acidity + alcohol + density + fixed.acidity +
+             sulphates + citric.acid + residual.sugar + chlorides +
+             free.sulfur.dioxide + other.sulfur.dioxide + pH,
+           data = wine_train)
 summary(m7)
 ```
 
@@ -413,13 +538,20 @@ summary(m7)
 results <- data.frame(wine_test$quality)
 colnames(results)[1] <- 'actual'
 
-results$predicted.1 <- ordered(predict(m1, newdata = wine_test), levels = c(3, 4, 5, 6, 7, 8))
-results$predicted.2 <- ordered(predict(m2, newdata = wine_test), levels = c(3, 4, 5, 6, 7, 8))
-results$predicted.3 <- ordered(predict(m3, newdata = wine_test), levels = c(3, 4, 5, 6, 7, 8))
-results$predicted.4 <- ordered(predict(m4, newdata = wine_test), levels = c(3, 4, 5, 6, 7, 8))
-results$predicted.5 <- ordered(predict(m5, newdata = wine_test), levels = c(3, 4, 5, 6, 7, 8))
-results$predicted.6 <- ordered(predict(m6, newdata = wine_test), levels = c(3, 4, 5, 6, 7, 8))
-results$predicted.7 <- ordered(predict(m7, newdata = wine_test), levels = c(3, 4, 5, 6, 7, 8))
+results$predicted.1 <- ordered(predict(m1, newdata = wine_test),
+                               levels = c(3, 4, 5, 6, 7, 8))
+results$predicted.2 <- ordered(predict(m2, newdata = wine_test),
+                               levels = c(3, 4, 5, 6, 7, 8))
+results$predicted.3 <- ordered(predict(m3, newdata = wine_test),
+                               levels = c(3, 4, 5, 6, 7, 8))
+results$predicted.4 <- ordered(predict(m4, newdata = wine_test),
+                               levels = c(3, 4, 5, 6, 7, 8))
+results$predicted.5 <- ordered(predict(m5, newdata = wine_test),
+                               levels = c(3, 4, 5, 6, 7, 8))
+results$predicted.6 <- ordered(predict(m6, newdata = wine_test),
+                               levels = c(3, 4, 5, 6, 7, 8))
+results$predicted.7 <- ordered(predict(m7, newdata = wine_test),
+                               levels = c(3, 4, 5, 6, 7, 8))
 
 ```
 
@@ -457,10 +589,12 @@ This score can be almost achieved with only 2 variables of the model m2 with
 volatile acidity and alcohol.
 
 The limitations of this exercise are:
-- the choice of the model: choosing multinomial logistics regression may not be
+
+* the choice of the model: choosing multinomial logistics regression may not be
 the best adapted model. We could explore further classification models like
 Naive Bayes, Decision Trees, Support Vector Machines, Neural Networks.
-- the absence of cross-validation: we have trained the model on one training set.
+* the absence of cross-validation: we have trained the model on one training
+set.
 We could further explore this area.
 
 ------
@@ -469,11 +603,11 @@ We could further explore this area.
 
 ### Plot One
 ```{r echo=FALSE, message=FALSE, warning=FALSE, Plot_One}
-ggplot(data = wine, aes(x = quality, y = volatile.acidity, color = quality)) +
+ggplot(data = wine, aes(x = quality, y = volatile.acidity)) +
   geom_boxplot() +
   scale_color_brewer(palette = 'RdYlGn') +
   ylim(c(0.2, 1.2)) +
-  labs(colour = 'Quality', x = 'Quality', y ='Volatile acidity') +
+  labs(colour = 'Quality', x = 'Quality', y ='Volatile acidity (g/L)') +
   labs(title = 'Volatile acidity distribution by quality rating')
 ```
 
@@ -487,13 +621,17 @@ the best candidate for a primary predictor of red wine quality.
 
 ### Plot Two
 ```{r echo=FALSE, message=FALSE, warning=FALSE, Plot_Two}
-ggplot(data = wine, aes(x = citric.acid, y = volatile.acidity, color = quality)) +
+ggplot(data = wine, aes(x = citric.acid, y = volatile.acidity,
+                        color = quality)) +
   geom_jitter(alpha = 0.75, size = 2) +
   scale_color_brewer(palette = 'RdYlGn') +
+  geom_smooth(method = lm, se = FALSE) +
   xlim(c(0, 0.8)) +
   ylim(c(0.2, 1.2)) +
-  labs(colour = 'Quality', x = 'Citric acid', y ='Volatile acidity') +
-  labs(title = 'Quality rating as a function of volatile acidity and citric acid')
+  labs(colour = 'Quality', x = 'Citric acid (g/L)',
+       y ='Volatile acidity (g/L)') +
+  labs(
+    title = 'Quality rating as a function of volatile acidity and citric acid')
 ```
 
 ### Description Two
@@ -503,9 +641,9 @@ volatile acidity and citric acid concentration.
 
 We can observe that the green points (high quality wines with a rating of 7 or
 8) tend to be clustered around high citric acid concentration (0.25 to 0.75 g/L)
-and low volatile acidity (0.2 to 0.6 g/L). Low quality wines tend to be clustered
-around low citric acid concentration (below 0.25 g/L) and high volatile acidity
-(above 0.6).
+and low volatile acidity (0.2 to 0.6 g/L). Low quality wines tend to be
+clustered around low citric acid concentration (below 0.25 g/L) and high
+volatile acidity (above 0.6).
 
 This clustering indicate that the combination of volatile acidity and citric
 acid concentration would make good predictors for wine quality.
@@ -515,9 +653,10 @@ acid concentration would make good predictors for wine quality.
 ggplot(data = wine, aes(x = alcohol, y = volatile.acidity, color = quality)) +
   geom_jitter(alpha = 0.75, size = 2) +
   scale_color_brewer(palette = 'RdYlGn') +
+  geom_smooth(method = lm, se = FALSE) +
   xlim(c(8, 14)) +
   ylim(c(0.2, 1.2)) +
-  labs(colour = 'Quality', x = 'Alcohol', y ='Volatile acidity') +
+  labs(colour = 'Quality', x = 'Alcohol (%)', y ='Volatile acidity (g/L)') +
   labs(title = 'Quality rating as a function of alcohol and volatile acidity')
 ```
 
@@ -528,8 +667,8 @@ volatile acidity and alcohol content.
 
 We can observe that the green points (high quality wines with a rating of 7 or
 8) tend to be clustered around high alcohol content (10 % and above)
-and low volatile acidity (0.2 to 0.6 g/L). Low quality wines tend to be clustered
-around low alcohol content (below 10 %) and high volatile acidity
+and low volatile acidity (0.2 to 0.6 g/L). Low quality wines tend to be
+clusteredaround low alcohol content (below 10 %) and high volatile acidity
 (above 0.6).
 
 This clustering indicate that the combination of volatile acidity and alcohol
@@ -560,29 +699,30 @@ This is not surprising, as citric acid - a desired acid for its softer acid
 taste and pleasant aromatic properties - is only one of its many constituents.
 
 It was surprising to see that chlorides and sulfur dioxides did not appear
-to be good predictors. Naturally, one would think that those chemical properties,
-associated with negative perception (taste or health), would be good indicators
-of lower wine quality.
+to be good predictors. Naturally, one would think that those chemical
+properties, associated with negative perception (taste or health), would be good
+indicators of lower wine quality.
 
 Overall, acceptable prediction of the wine quality can already be achieved
 with only 2 variables of the model m2 with volatile acidity and alcohol.
 
 There are several axes of further exploration and improvement in the prediction
 by deep-diving:
-- the influence of other chemical properties: glycerol (a contributor for the
+
+* the influence of other chemical properties: glycerol (a contributor for the
 mouth-feel and texture), amino acids, tannin, minerals etc.
-- the choice of the machine learning model to apply : choosing multinomial
+* the choice of the machine learning model to apply : choosing multinomial
 logistics regression may not be the best adapted model. We could explore further
 classification models like Naive Bayes, Decision Trees, Support Vector Machines,
 Neural Networks etc.
-- the fine-tuning of the model hyperparameters: no adjustment at all was done 
+* the fine-tuning of the model hyperparameters: no adjustment at all was done 
 in this exercise.
-- the machine learning model cross-validation: we have trained the model on
+* the machine learning model cross-validation: we have trained the model on
 one training set. We could further explore this area.
 
-**** Reference
-- http://waterhouse.ucdavis.edu/whats-in-wine/
-- https://www.r-bloggers.com/how-to-perform-a-logistic-regression-in-r/
-- https://stat.ethz.ch/pipermail/r-help/2003-May/033335.html
-- https://stats.idre.ucla.edu/r/dae/ordinal-logistic-regression/
-- ggplot, ggally and R documentation
+#### Reference
+* http://waterhouse.ucdavis.edu/whats-in-wine/
+* https://www.r-bloggers.com/how-to-perform-a-logistic-regression-in-r/
+* https://stat.ethz.ch/pipermail/r-help/2003-May/033335.html
+* https://stats.idre.ucla.edu/r/dae/ordinal-logistic-regression/
+* ggplot, ggally and R documentation
